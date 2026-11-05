@@ -103,6 +103,8 @@ def _valid_stream(name):
 @hls_bp.route('/api/streams/<path:stream_name>/abr', methods=['POST'])
 def start_abr(stream_name):
     """Enable ABR HLS transcoding for a stream."""
+    if not _valid_stream(stream_name):
+        return jsonify({'status': 'error', 'error': 'Invalid stream name'}), 400
     result = abr_manager.start(stream_name)
     status_code = 200 if result['status'] in ('started', 'already_running') else 500
     return jsonify(result), status_code
@@ -111,6 +113,8 @@ def start_abr(stream_name):
 @hls_bp.route('/api/streams/<path:stream_name>/abr', methods=['DELETE'])
 def stop_abr(stream_name):
     """Disable ABR HLS transcoding for a stream."""
+    if not _valid_stream(stream_name):
+        return jsonify({'status': 'error', 'error': 'Invalid stream name'}), 400
     result = abr_manager.stop(stream_name)
     return jsonify(result), 200
 
@@ -118,6 +122,8 @@ def stop_abr(stream_name):
 @hls_bp.route('/api/streams/<path:stream_name>/abr/status', methods=['GET'])
 def abr_status(stream_name):
     """Get ABR status for a stream."""
+    if not _valid_stream(stream_name):
+        return jsonify({'status': 'error', 'error': 'Invalid stream name'}), 400
     result = abr_manager.status(stream_name)
     return jsonify(result), 200
 

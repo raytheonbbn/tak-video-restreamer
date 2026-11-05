@@ -1098,3 +1098,27 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
+
+
+class TestAbrStreamNameValidation:
+    """ABR endpoints use the same stream-name rules as HLS playback"""
+
+    @pytest.mark.parametrize('method,suffix', [
+        ('post', '/abr'), ('delete', '/abr'), ('get', '/abr/status'),
+    ])
+    def test_rejects_names_outside_the_hls_directory(self, client, monkeypatch, method, suffix):
+        from app.services.abr import abr_manager
+        calls = []
+        for name in ('start', 'stop', 'status'):
+            monkeypatch.setattr(abr_manager, name, lambda s, _n=name: calls.append((_n, s)) or {'status': 'started'})
+        response = getattr(client, method)(f'/api/streams/..%2F..%2Fescaped{suffix}')
+        assert response.status_code == 400
+        assert calls == []
+
+    def test_valid_name_reaches_abr_manager(self, client, monkeypatch):
+        from app.services.abr import abr_manager
+        calls = []
+        monkeypatch.setattr(abr_manager, 'start', lambda s: calls.append(s) or {'status': 'started', 'stream': s})
+        response = client.post('/api/streams/live/cam1/abr')
+        assert response.status_code == 200
+        assert calls == ['live/cam1']
